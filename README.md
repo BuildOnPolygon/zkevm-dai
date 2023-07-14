@@ -53,7 +53,13 @@ forge install
 Use the following command to run the test:
 
 ```sh
-forge test
+forge test --fork-url $ETH_RPC_URL --match-path test/L1Escrow.t.sol
+```
+
+You can also run individual test using the following command:
+
+```sh
+forge test --fork-url $ETH_RPC_URL --match-test testBridgeDAIWithPermit -vvvv
 ```
 
 ### Deployment
@@ -61,7 +67,7 @@ forge test
 Use the following command to deploy on Goerli:
 
 ```sh
-forge script DeployGoerli
+forge script ...
 ```
 
 ### Contract addresses
