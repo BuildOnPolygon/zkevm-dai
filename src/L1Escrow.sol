@@ -2,17 +2,18 @@
 pragma solidity 0.8.17;
 
 /**
- * L1Escrow
- * Escrow contract
+ * @title L1Escrow
+ * @author sepyke.eth
+ * @notice Main contract to bridge DAI from Ethereum to Polygon zkEVM
  */
 contract L1Escrow {
-    uint256 public number;
+  uint256 public number;
 
-    function setNumber(uint256 newNumber) public {
-        number = newNumber;
-    }
+  function setNumber(uint256 newNumber) public {
+    number = newNumber;
+  }
 
-    function increment() public {
-        number++;
-    }
+  function increment() public {
+    number++;
+  }
 }
