@@ -7,8 +7,8 @@ pragma solidity 0.8.17;
  * @notice This mock contract is used to make sure passed message are valid
  */
 contract BridgeMock {
-  uint32 public destNetworkId;
-  address public l2Address;
+  uint32 public destId;
+  address public destAddress;
   address public recipient;
   uint256 public amount;
   bool public forceUpdateGlobalExitRoot;
@@ -19,8 +19,8 @@ contract BridgeMock {
     bool force,
     bytes calldata metadata
   ) external payable {
-    destNetworkId = destinationNetwork;
-    l2Address = destinationAddress;
+    destId = destinationNetwork;
+    destAddress = destinationAddress;
     forceUpdateGlobalExitRoot = force;
     (recipient, amount) = abi.decode(metadata, (address, uint256));
   }

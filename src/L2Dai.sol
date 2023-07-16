@@ -6,9 +6,6 @@ import {UUPSUpgradeable} from "upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20Upgradeable} from "upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-import {IERC20} from "oz/token/ERC20/IERC20.sol";
-import {SafeERC20} from "oz/token/ERC20/utils/SafeERC20.sol";
-
 import {ISavingsDAI} from "./ISavingsDAI.sol";
 import {IBridge} from "./IBridge.sol";
 
@@ -23,12 +20,14 @@ contract L2Dai is
   OwnableUpgradeable,
   ERC20Upgradeable
 {
-  IBridge bridge;
-  address destTokenAddress;
-  uint32 destNetworkId;
+  /// @notice The Polygon zkEVM bridge contract
+  IBridge public zkEvmBridge;
 
-  /// @notice This event is emitted when the L1 address is updated
-  event BridgeDestinationUpdated(address newAddress, uint32 newNetworkId);
+  /// @notice L1Escrow contract address on Ethereum mainnet
+  address public destAddress;
+
+  /// @notice Network ID of Ethereum mainnet on the Polygon zkEVM bridge
+  uint32 public destId;
 
   /// @notice This event is emitted when the DAI is bridged
   event DAIBridged(address indexed bridgoor, uint256 amount, uint256 total);
@@ -39,24 +38,30 @@ contract L2Dai is
   /// @notice This error is raised if message from the bridge is invalid
   error MessageInvalid();
 
+  /// @notice This error is raised if bridged amount is invalid
+  error BridgeAmountInvalid();
+
   /**
    * @notice L2Dai initializer
-   * @param _bridge The Polygon zkEVM bridge address
-   * @param _destNetworkId The Polygon zkEVM ID on the bridge
-   * @param _destTokenAddress The token address on the Polygon zkEVM network
+   * @dev This initializer should be called via UUPSProxy constructor
+   * @param _ownerAddress The contract owner
+   * @param _bridgeAddress The Polygon zkEVM bridge address
+   * @param _destAddress The contract address of L1Escrow
+   * @param _destId ID of Ethereum mainnet on the Polygon zkEVM bridge
    */
   function initialize(
-    address _bridge,
-    uint32 _destNetworkId,
-    address _destTokenAddress
+    address _ownerAddress,
+    address _bridgeAddress,
+    address _destAddress,
+    uint32 _destId
   ) public initializer {
     __Ownable_init();
     __UUPSUpgradeable_init();
     __ERC20_init("Dai Stablecoin", "DAI");
-
-    bridge = IBridge(_bridge);
-    destNetworkId = _destNetworkId;
-    destTokenAddress = _destTokenAddress;
+    transferOwnership(_ownerAddress);
+    zkEvmBridge = IBridge(_bridgeAddress);
+    destAddress = _destAddress;
+    destId = _destId;
   }
 
   /**
@@ -66,33 +71,21 @@ contract L2Dai is
   function _authorizeUpgrade(address v) internal override onlyOwner {}
 
   /**
-   * @dev Set bridge destination to send and confirm bridge message
-   * @param _destTokenAddress L1Escrow smart contract address
-   * @param _destNetworkId 0 for Mainnet
-   */
-  function setBridgeDestination(
-    address _destTokenAddress,
-    uint32 _destNetworkId
-  ) public onlyOwner {
-    destTokenAddress = _destTokenAddress;
-    destNetworkId = _destNetworkId;
-    emit BridgeDestinationUpdated(_destTokenAddress, _destNetworkId);
-  }
-
-  /**
    * @notice Bridge DAI from Polygon zkEVM to Ethereum mainnet
    * @param amount DAI amount
    * @param forceUpdateGlobalExitRoot Indicates if the global exit root is
    *        updated or not
    */
-  function bridgeDAI(uint256 amount, bool forceUpdateGlobalExitRoot)
+  function bridge(uint256 amount, bool forceUpdateGlobalExitRoot)
     public
     virtual
   {
+    if (amount < 1 ether) revert BridgeAmountInvalid();
+
     _burn(msg.sender, amount);
     bytes memory messageData = abi.encode(msg.sender, amount);
-    bridge.bridgeMessage(
-      destNetworkId, destTokenAddress, forceUpdateGlobalExitRoot, messageData
+    zkEvmBridge.bridgeMessage(
+      destId, destAddress, forceUpdateGlobalExitRoot, messageData
     );
     emit DAIBridged(msg.sender, amount, totalSupply());
   }
@@ -107,10 +100,10 @@ contract L2Dai is
     address originAddress,
     uint32 originNetwork,
     bytes memory metadata
-  ) external payable {
-    if (msg.sender != address(bridge)) revert MessageInvalid();
-    if (originAddress != destTokenAddress) revert MessageInvalid();
-    if (originNetwork != destNetworkId) revert MessageInvalid();
+  ) external payable virtual {
+    if (msg.sender != address(zkEvmBridge)) revert MessageInvalid();
+    if (originAddress != destAddress) revert MessageInvalid();
+    if (originNetwork != destId) revert MessageInvalid();
 
     (address recipient, uint256 amount) =
       abi.decode(metadata, (address, uint256));

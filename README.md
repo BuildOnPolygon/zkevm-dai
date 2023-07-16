@@ -55,13 +55,19 @@ forge install
 Use the following command to run the test:
 
 ```sh
+# L1Escrow test
 forge test --fork-url $ETH_RPC_URL --match-path test/L1Escrow.t.sol
+
+# L2Dai test
+forge test --fork-url "https://zkevm-rpc.com" --match-path test/L2Dai.t.sol
 ```
 
 You can also run individual test using the following command:
 
 ```sh
 forge test --fork-url $ETH_RPC_URL --match-test testSendExcessYield -vvvv
+
+forge test --fork-url "https://zkevm-rpc.com" --match-path test/L2Dai.t.sol --match-test testBridgeWithMockedBridge -vvvv
 ```
 
 > **Note**

@@ -18,14 +18,14 @@ import {IBridge} from "./IBridge.sol";
 contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
   using SafeERC20 for IERC20;
 
-  /// @notice DAI contract address
+  /// @notice DAI contract
   IERC20 public dai;
 
-  /// @notice sDAI contract address
+  /// @notice sDAI contract
   ISavingsDAI public sdai;
 
-  /// @notice Polygon zkEVM Bridge contract address
-  IBridge public bridge;
+  /// @notice Polygon zkEVM bridge contract
+  IBridge public zkEvmBridge;
 
   /// @notice Native DAI contract address on Polygon zkEVM
   address public destTokenAddress;
@@ -93,7 +93,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     dai = IERC20(_dai);
     sdai = ISavingsDAI(_sdai);
-    bridge = IBridge(_bridge);
+    zkEvmBridge = IBridge(_bridge);
     destNetworkId = _destNetworkId;
     destTokenAddress = _destTokenAddress;
     beneficiary = _beneficiary;
@@ -121,7 +121,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
    * @param forceUpdateGlobalExitRoot Indicates if the global exit root is
    *        updated or not
    */
-  function bridgeDAI(uint256 amount, bool forceUpdateGlobalExitRoot)
+  function bridge(uint256 amount, bool forceUpdateGlobalExitRoot)
     external
     virtual
   {
@@ -141,7 +141,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     dai.safeApprove(address(sdai), 0);
 
     bytes memory messageData = abi.encode(msg.sender, amount);
-    bridge.bridgeMessage(
+    zkEvmBridge.bridgeMessage(
       destNetworkId, destTokenAddress, forceUpdateGlobalExitRoot, messageData
     );
     totalBridgedDAI += amount;
@@ -219,8 +219,8 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     address originAddress,
     uint32 originNetwork,
     bytes memory metadata
-  ) external payable {
-    if (msg.sender != address(bridge)) revert MessageInvalid();
+  ) external payable virtual {
+    if (msg.sender != address(zkEvmBridge)) revert MessageInvalid();
     if (originAddress != destTokenAddress) revert MessageInvalid();
     if (originNetwork != destNetworkId) revert MessageInvalid();
 
