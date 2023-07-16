@@ -83,45 +83,20 @@ forge script ...
 
 ## Contract addresses
 
-On Goerli Testnet:
-
-| Smart contract       | Address on Goerli                            |
-| -------------------- | -------------------------------------------- |
-| DAI                  | `0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844` |
-| Polygon ZkEVM Bridge | `0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7` |
-| sDAI                 | `0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C` |
-| L1Escrow             |                                              |
-| L2Dai                |                                              |
-
-On Polygon zkEVM testnet:
-
-| Smart contract       | Address on Goerli                            |
-| -------------------- | -------------------------------------------- |
-| DAI                  | `0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844` |
-| Polygon ZkEVM Bridge | `0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7` |
-| sDAI                 | `0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C` |
-| L1Escrow             |                                              |
-| L2Dai                |                                              |
-
-On Ethereum Mainnet:
-
-| Smart contract       | Address on Goerli                            |
-| -------------------- | -------------------------------------------- |
-| DAI                  | `0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844` |
-| Polygon ZkEVM Bridge | `0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7` |
-| sDAI                 | `0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C` |
-| L1Escrow             |                                              |
-| L2Dai                |                                              |
-
-On Polygon zkEVM:
-
-| Smart contract       | Address on Goerli                            |
-| -------------------- | -------------------------------------------- |
-| DAI                  | `0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844` |
-| Polygon ZkEVM Bridge | `0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7` |
-| sDAI                 | `0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C` |
-| L1Escrow             |                                              |
-| L2Dai                |                                              |
+| Smart contract       | Network       | Address                                                                                                                                |
+| -------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| DAI                  | Goerli        | [0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844](https://goerli.etherscan.io/token/0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844)             |
+|                      | Mainnet       | [0x6B175474E89094C44Da98b954EedeAC495271d0F](https://etherscan.io/address/0x6B175474E89094C44Da98b954EedeAC495271d0F)                  |
+| sDAI                 | Goerli        | [0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C](https://goerli.etherscan.io/token/0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C)             |
+|                      | Mainnet       | [0x83f20f44975d03b1b09e64809b757c47f942beea](https://etherscan.io/token/0x83f20f44975d03b1b09e64809b757c47f942beea#code)               |
+| Polygon ZkEVM Bridge | Goerli        | [0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7](https://goerli.etherscan.io/address/0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7)           |
+|                      | Mainnet       | [0x2a3dd3eb832af982ec71669e178424b10dca2ede](https://etherscan.io/address/0x2a3dd3eb832af982ec71669e178424b10dca2ede)                  |
+|                      | zkEVM Testnet | [0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7](https://testnet-zkevm.polygonscan.com/address/0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7) |
+|                      | zkEVM Mainnet | [0x2a3dd3eb832af982ec71669e178424b10dca2ede](https://zkevm.polygonscan.com/address/0x2a3dd3eb832af982ec71669e178424b10dca2ede)         |
+| L1Escrow             | Goerli        | _To be deployed_                                                                                                                       |
+|                      | Mainnet       | _To be deployed_                                                                                                                       |
+| L2Dai                | zkEVM Testnet | _To be deployed_                                                                                                                       |
+|                      | zkEVM Mainnet | _To be deployed_                                                                                                                       |
 
 ## Known Issues
 
