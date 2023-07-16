@@ -18,11 +18,20 @@ import {IBridge} from "./IBridge.sol";
 contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
   using SafeERC20 for IERC20;
 
-  IERC20 dai;
-  ISavingsDAI sdai;
-  IBridge bridge;
-  address destTokenAddress;
-  uint32 destNetworkId;
+  /// @notice DAI contract address
+  IERC20 public dai;
+
+  /// @notice sDAI contract address
+  ISavingsDAI public sdai;
+
+  /// @notice Polygon zkEVM Bridge contract address
+  IBridge public bridge;
+
+  /// @notice Native DAI contract address on Polygon zkEVM
+  address public destTokenAddress;
+
+  /// @notice Network ID of Polygon zkEVM on the Polygon zkEVM bridge
+  uint32 public destNetworkId;
 
   /// @notice The total amount of DAI bridged to Polygon zkEVM
   uint256 public totalBridgedDAI;
@@ -56,6 +65,9 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
   /// @notice This error is raised if message from the bridge is invalid
   error MessageInvalid();
+
+  /// @notice This error is raised if bridged amount is invalid
+  error BridgeAmountInvalid();
 
   /**
    * @notice L1Escrow initializer
@@ -110,16 +122,24 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
    *        updated or not
    */
   function bridgeDAI(uint256 amount, bool forceUpdateGlobalExitRoot)
-    public
+    external
     virtual
   {
+    // Set minimum amount of bridged DAI to cover rounding issue
+    // e.g. if you deposit 1 wei to sDAI, you will get 0 shares
+    if (amount < 1 ether) revert BridgeAmountInvalid();
+
     dai.safeTransferFrom(msg.sender, address(this), amount);
-    uint256 balance = dai.balanceOf(address(this));
-    if (balance > totalProtocolDAI) {
-      uint256 depositAmount = balance - totalProtocolDAI;
-      dai.safeApprove(address(sdai), depositAmount);
-      sdai.deposit(depositAmount, address(this));
-    }
+
+    // NOTE:
+    // Currently there is no way to check the max deposit amount.
+    // sdai.maxDeposit is hardcoded to type(uint256).max.
+    // sdai.deposit may reverted and it is possible that total amount of
+    // locked DAI in this smart contract is greater than the totalProtocolDAI
+    dai.safeApprove(address(sdai), amount);
+    try sdai.deposit(amount, address(this)) returns (uint256) {} catch {}
+    dai.safeApprove(address(sdai), 0);
+
     bytes memory messageData = abi.encode(msg.sender, amount);
     bridge.bridgeMessage(
       destNetworkId, destTokenAddress, forceUpdateGlobalExitRoot, messageData
@@ -135,16 +155,17 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     uint256 sdaiBalance = IERC20(address(sdai)).balanceOf(address(this));
     uint256 daiBalance = IERC20(address(dai)).balanceOf(address(this));
     uint256 savingsBalance = sdai.previewRedeem(sdaiBalance);
-    uint256 totalBalance = savingsBalance + daiBalance;
-    if (totalBalance > 0) {
-      uint256 excess = totalBalance - totalBridgedDAI;
+    uint256 totalManagedDAI = savingsBalance + daiBalance;
+    if (totalManagedDAI > 0) {
+      uint256 excess = totalManagedDAI - totalBridgedDAI;
       if (excess > daiBalance) {
         uint256 withdrawAmount = excess - daiBalance;
         sdai.withdraw(withdrawAmount, address(this), address(this));
       }
-      if (excess > 0) {
-        dai.transfer(beneficiary, excess - 1); // NOTE: Handle simple rounding
-        emit YieldClaimed(beneficiary, excess - 1);
+      if (excess > 0.05 ether) {
+        uint256 claimedYield = excess - 0.01 ether;
+        dai.transfer(beneficiary, claimedYield);
+        emit YieldClaimed(beneficiary, claimedYield);
       }
     }
   }
@@ -155,10 +176,13 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
   function rebalance() public {
     uint256 balance = IERC20(address(dai)).balanceOf(address(this));
     if (balance > totalProtocolDAI) {
-      uint256 depositAmount = balance - totalProtocolDAI;
-      if (depositAmount > 0) {
+      uint256 targetDepositAmount = balance - totalProtocolDAI;
+      if (targetDepositAmount > 0.05 ether) {
+        // Leave smol amount of DAI in this smart contract
+        uint256 depositAmount = targetDepositAmount - 0.01 ether;
         dai.safeApprove(address(sdai), depositAmount);
         sdai.deposit(depositAmount, address(this));
+        dai.safeApprove(address(sdai), 0);
         emit AssetRebalanced();
       }
     } else {

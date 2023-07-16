@@ -28,6 +28,8 @@ With Native DAI, user can do the following:
 1. Bridge DAI from Ethereum mainnet to Polygon zkEVM via `L1Escrow` contract.
 2. Bridge DAI from Polygon zkEVM to Ethereum mainnet via `L2Dai` contract.
 
+## Get started
+
 ### Requirements
 
 This repository is using foundry. You can install foundry via
@@ -59,10 +61,13 @@ forge test --fork-url $ETH_RPC_URL --match-path test/L1Escrow.t.sol
 You can also run individual test using the following command:
 
 ```sh
-forge test --fork-url $ETH_RPC_URL --match-test testBridgeDAIWithPermit -vvvv
+forge test --fork-url $ETH_RPC_URL --match-test testSendExcessYield -vvvv
 ```
 
-### Deployment
+> **Note**
+> You can set `ETHERSCAN_API_KEY` to helps you debug the call trace.
+
+## Deployment
 
 Use the following command to deploy on Goerli:
 
@@ -70,7 +75,7 @@ Use the following command to deploy on Goerli:
 forge script ...
 ```
 
-### Contract addresses
+## Contract addresses
 
 On Goerli Testnet:
 
@@ -111,3 +116,40 @@ On Polygon zkEVM:
 | sDAI                 | `0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C` |
 | L1Escrow             |                                              |
 | L2Dai                |                                              |
+
+## Known Issues
+
+### Rounding Issue
+
+When we deposit `x` amount of DAI to sDAI, we will get `y` amount of sDAI based
+on the current exchange rate `r`. Due to how `y` is rounded down by sDAI, there
+is possibility that when we redeem `y` amount of sDAI we will get `x' = x - 1`
+amount of DAI.
+
+For, example:
+
+```solidity
+uint256 x = 1000000000000000001;
+uint256 y = sdai.deposit(x);
+uint255 x_ = sdai.redeem(y); // x_ = 1000000000000000000
+```
+
+> **Notice**
+> See [sDAI.t.sol](./test/sDAI.t.sol) for more details.
+
+Ofcourse, `r` will be increased over time and this 1 wei will be covered.
+
+To make sure that bridged DAI is always 1:1, it is advised to donate small
+amount of DAI on `L1Escrow` on the first time it get deployed (e.g. 0.01 DAI).
+
+`sendExcessYield` will send excess yield if the total yield is more than
+0.05 DAI and will leave 0.01 DAI from the yield in L1Escrow.
+
+### Locked DAI in L1Escrow may greater than totalProtocolDAI
+
+Currently there is no way to check the maximum deposit amount of sDAI.
+`sdai.maxDeposit(address)` is hardcoded to `type(uint256).max`.
+
+`sdai.deposit(amount, recipient)` may reverted and it is possible that total
+amount of locked DAI in the `L1Escrow` is greater than the specified
+`totalProtocolDAI`.
