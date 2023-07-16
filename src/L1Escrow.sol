@@ -28,10 +28,10 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
   IBridge public zkEvmBridge;
 
   /// @notice Native DAI contract address on Polygon zkEVM
-  address public destTokenAddress;
+  address public destAddress;
 
   /// @notice Network ID of Polygon zkEVM on the Polygon zkEVM bridge
-  uint32 public destNetworkId;
+  uint32 public destId;
 
   /// @notice The total amount of DAI bridged to Polygon zkEVM
   uint256 public totalBridgedDAI;
@@ -71,31 +71,33 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
   /**
    * @notice L1Escrow initializer
-   * @param _dai The DAI address
-   * @param _sdai The sDAI address
-   * @param _bridge The Polygon zkEVM bridge address
-   * @param _destNetworkId The Polygon zkEVM ID on the bridge
-   * @param _destTokenAddress The token address on the Polygon zkEVM network
+   * @param _ownerAddress The owner address
+   * @param _daiAddress The DAI address
+   * @param _sdaiAddress The sDAI address
+   * @param _bridgeAddress The Polygon zkEVM bridge address
+   * @param _destId The Polygon zkEVM ID on the bridge
+   * @param _destAddress The token address on the Polygon zkEVM network
    * @param _totalProtocolDAI The target amount of DAI locked
    * @param _beneficiary The address to which yield from DSR should be sent
    */
   function initialize(
-    address _dai,
-    address _sdai,
-    address _bridge,
-    uint32 _destNetworkId,
-    address _destTokenAddress,
+    address _ownerAddress,
+    address _daiAddress,
+    address _sdaiAddress,
+    address _bridgeAddress,
+    uint32 _destId,
+    address _destAddress,
     uint256 _totalProtocolDAI,
     address _beneficiary
   ) public initializer {
     __Ownable_init();
     __UUPSUpgradeable_init();
-
-    dai = IERC20(_dai);
-    sdai = ISavingsDAI(_sdai);
-    zkEvmBridge = IBridge(_bridge);
-    destNetworkId = _destNetworkId;
-    destTokenAddress = _destTokenAddress;
+    transferOwnership(_ownerAddress);
+    dai = IERC20(_daiAddress);
+    sdai = ISavingsDAI(_sdaiAddress);
+    zkEvmBridge = IBridge(_bridgeAddress);
+    destId = _destId;
+    destAddress = _destAddress;
     beneficiary = _beneficiary;
     totalProtocolDAI = _totalProtocolDAI;
   }
@@ -142,7 +144,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     bytes memory messageData = abi.encode(msg.sender, amount);
     zkEvmBridge.bridgeMessage(
-      destNetworkId, destTokenAddress, forceUpdateGlobalExitRoot, messageData
+      destId, destAddress, forceUpdateGlobalExitRoot, messageData
     );
     totalBridgedDAI += amount;
     emit DAIBridged(msg.sender, amount, totalBridgedDAI);
@@ -221,8 +223,8 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     bytes memory metadata
   ) external payable virtual {
     if (msg.sender != address(zkEvmBridge)) revert MessageInvalid();
-    if (originAddress != destTokenAddress) revert MessageInvalid();
-    if (originNetwork != destNetworkId) revert MessageInvalid();
+    if (originAddress != destAddress) revert MessageInvalid();
+    if (originNetwork != destId) revert MessageInvalid();
 
     (address recipient, uint256 amount) =
       abi.decode(metadata, (address, uint256));

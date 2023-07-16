@@ -36,6 +36,7 @@ contract L1EscrowTest is Test {
   using SafeERC20 for IERC20;
 
   address void = address(0);
+  address owner = address(0xB453D);
   address alice = address(0xA11CE);
   address bob = address(0xB0B);
   address beneficiary = address(3);
@@ -55,20 +56,35 @@ contract L1EscrowTest is Test {
 
   function setUp() public {
     v1 = new L1Escrow();
-    UUPSProxy proxy = new UUPSProxy(address(v1), "");
-    proxyV1 = L1Escrow(address(proxy));
-    proxyV1.initialize(
-      dai, sdai, bridgeAddress, 1, l2Address, 1 ether, beneficiary
+    bytes memory v1Data = abi.encodeWithSelector(
+      L1Escrow.initialize.selector,
+      owner,
+      dai,
+      sdai,
+      bridgeAddress,
+      1,
+      l2Address,
+      1 ether,
+      beneficiary
     );
+    UUPSProxy proxy = new UUPSProxy(address(v1), v1Data);
+    proxyV1 = L1Escrow(address(proxy));
 
     mockedV1 = new L1Escrow();
-    UUPSProxy mockedProxy = new UUPSProxy(address(v1), "");
-    mockedProxyV1 = L1Escrow(address(mockedProxy));
     bridge = new BridgeMock();
-    mockedProxyV1.initialize(
-      dai, sdai, address(bridge), 1, l2Address, 1 ether, beneficiary
+    bytes memory mockedV1Data = abi.encodeWithSelector(
+      L1Escrow.initialize.selector,
+      owner,
+      dai,
+      sdai,
+      address(bridge),
+      1,
+      l2Address,
+      1 ether,
+      beneficiary
     );
-
+    UUPSProxy mockedProxy = new UUPSProxy(address(v1), mockedV1Data);
+    mockedProxyV1 = L1Escrow(address(mockedProxy));
     v2 = new L1EscrowV2Mock();
     proxyV2 = L1EscrowV2Mock(address(proxyV1));
 
@@ -93,6 +109,7 @@ contract L1EscrowTest is Test {
     // Pre-upgrade check
     assertEq(proxyV1.beneficiary(), beneficiary);
 
+    vm.startPrank(owner);
     proxyV1.upgradeTo(address(v2));
     vm.expectRevert(
       abi.encodeWithSelector(L1Escrow.BeneficiaryInvalid.selector, alice)
@@ -117,7 +134,9 @@ contract L1EscrowTest is Test {
 
   /// @notice Make sure owner can update the totalProtocolDAI
   function testSetProtocolDAIAsOwner() public {
+    vm.startPrank(owner);
     proxyV1.setProtocolDAI(1 ether);
+    vm.stopPrank();
     assertEq(proxyV1.totalProtocolDAI(), 1 ether);
   }
 
@@ -239,7 +258,9 @@ contract L1EscrowTest is Test {
 
     // It should withdraw DAI from sDAI
     uint256 sDaiBalancePrev = IERC20(sdai).balanceOf(address(proxyV1));
+    vm.startPrank(owner);
     proxyV1.setProtocolDAI(3 ether);
+    vm.stopPrank();
     proxyV1.rebalance();
     uint256 sDaiBalanceAfter = IERC20(sdai).balanceOf(address(proxyV1));
     assertTrue(sDaiBalancePrev > sDaiBalanceAfter);
@@ -247,7 +268,9 @@ contract L1EscrowTest is Test {
 
     // It should deposit DAI to sDAI
     sDaiBalancePrev = IERC20(sdai).balanceOf(address(proxyV1));
+    vm.startPrank(owner);
     proxyV1.setProtocolDAI(1 ether);
+    vm.stopPrank();
     proxyV1.rebalance();
     sDaiBalanceAfter = IERC20(sdai).balanceOf(address(proxyV1));
     assertTrue(sDaiBalancePrev < sDaiBalanceAfter);
@@ -260,7 +283,9 @@ contract L1EscrowTest is Test {
 
   /// @notice Make sure owner can update the beneficiary
   function testSetBeneficiaryAsOwner() public {
+    vm.startPrank(owner);
     proxyV1.setBeneficiary(bob);
+    vm.stopPrank();
     assertEq(proxyV1.beneficiary(), bob);
   }
 
@@ -274,6 +299,7 @@ contract L1EscrowTest is Test {
 
   /// @notice Make sure revert if beneficiary is invalid
   function testSetBeneficiaryToInvalidAddress() public {
+    vm.startPrank(owner);
     address prevBeneficiary = proxyV1.beneficiary();
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -286,6 +312,7 @@ contract L1EscrowTest is Test {
       abi.encodeWithSelector(L1Escrow.BeneficiaryInvalid.selector, void)
     );
     proxyV1.setBeneficiary(void);
+    vm.stopPrank();
   }
 
   // ==========================================================================
@@ -304,8 +331,8 @@ contract L1EscrowTest is Test {
     vm.stopPrank();
 
     address currentBridgeAddress = address(proxyV1.zkEvmBridge());
-    address originAddress = proxyV1.destTokenAddress();
-    uint32 originNetwork = proxyV1.destNetworkId();
+    address originAddress = proxyV1.destAddress();
+    uint32 originNetwork = proxyV1.destId();
     bytes memory metadata = abi.encode(bob, 1 ether);
 
     // Invalid caller
@@ -345,8 +372,8 @@ contract L1EscrowTest is Test {
     vm.stopPrank();
 
     address currentBridgeAddress = address(proxyV1.zkEvmBridge());
-    address originAddress = proxyV1.destTokenAddress();
-    uint32 originNetwork = proxyV1.destNetworkId();
+    address originAddress = proxyV1.destAddress();
+    uint32 originNetwork = proxyV1.destId();
     bytes memory messageData = abi.encode(alice, bridgeAmount);
 
     vm.startPrank(currentBridgeAddress);
