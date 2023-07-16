@@ -134,7 +134,7 @@ uint256 y = sdai.deposit(x);
 uint255 x_ = sdai.redeem(y); // x_ = 1000000000000000000
 ```
 
-> **Notice**
+> **Note**
 > See [sDAI.t.sol](./test/sDAI.t.sol) for more details.
 
 Ofcourse, `r` will be increased over time and this 1 wei will be covered.
