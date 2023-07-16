@@ -226,14 +226,17 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     (address recipient, uint256 amount) =
       abi.decode(metadata, (address, uint256));
-    uint256 balance = IERC20(address(dai)).balanceOf(address(this));
-    if (amount > balance) {
-      uint256 withdrawAmount = amount - balance;
-      sdai.withdraw(withdrawAmount, address(this), address(this));
+
+    uint256 sdaiBalance = IERC20(address(sdai)).balanceOf(address(this));
+    uint256 savingsBalance = sdai.previewRedeem(sdaiBalance);
+    if (amount > savingsBalance) {
+      sdai.withdraw(savingsBalance, recipient, address(this));
+      dai.transfer(recipient, amount - savingsBalance);
+    } else {
+      sdai.withdraw(amount, recipient, address(this));
     }
 
     totalBridgedDAI -= amount;
-    dai.transfer(recipient, amount);
     emit DAIClaimed(recipient, amount, totalBridgedDAI);
   }
 }
