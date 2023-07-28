@@ -17,7 +17,7 @@ import {UUPSProxy} from "./UUPSProxy.sol";
  */
 contract L1EscrowV2Mock is L1Escrow {
   /// @dev Update setBeneficiary logic for testing purpose
-  function setBeneficiary(address b) public view override onlyOwner {
+  function setBeneficiary(address b) public view override onlyRole(ADMIN_ROLE) {
     revert BeneficiaryInvalid(b);
   }
 
@@ -35,11 +35,14 @@ contract L1EscrowV2Mock is L1Escrow {
 contract L1EscrowTest is Test {
   using SafeERC20 for IERC20;
 
+  string ETH_RPC_URL = vm.envString("ETH_RPC_URL");
+
   address void = address(0);
-  address owner = address(0xB453D);
-  address alice = address(0xA11CE);
-  address bob = address(0xB0B);
-  address beneficiary = address(3);
+  address admin = vm.addr(0xB453D);
+  address maker = vm.addr(0xD4160D);
+  address alice = vm.addr(0xA11CE);
+  address bob = vm.addr(0xB0B);
+  address beneficiary = vm.addr(0xC001);
 
   address dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
   address sdai = address(0x83F20F44975D03b1b09e64809B757c47f942BEeA);
@@ -55,10 +58,14 @@ contract L1EscrowTest is Test {
   BridgeMock bridge;
 
   function setUp() public {
+    uint256 mainnetFork = vm.createFork(ETH_RPC_URL);
+    vm.selectFork(mainnetFork);
+
     v1 = new L1Escrow();
     bytes memory v1Data = abi.encodeWithSelector(
       L1Escrow.initialize.selector,
-      owner,
+      admin,
+      maker,
       dai,
       sdai,
       bridgeAddress,
@@ -74,7 +81,8 @@ contract L1EscrowTest is Test {
     bridge = new BridgeMock();
     bytes memory mockedV1Data = abi.encodeWithSelector(
       L1Escrow.initialize.selector,
-      owner,
+      admin,
+      maker,
       dai,
       sdai,
       address(bridge),
@@ -104,12 +112,12 @@ contract L1EscrowTest is Test {
   // == Upgradeability ========================================================
   // ==========================================================================
 
-  /// @notice Upgrade as owner; make sure it works as expected
-  function testUpgradeAsOwner() public {
+  /// @notice Upgrade as admin; make sure it works as expected
+  function testUpgradeAsAdmin() public {
     // Pre-upgrade check
     assertEq(proxyV1.beneficiary(), beneficiary);
 
-    vm.startPrank(owner);
+    vm.startPrank(admin);
     proxyV1.upgradeTo(address(v2));
     vm.expectRevert(
       abi.encodeWithSelector(L1Escrow.BeneficiaryInvalid.selector, alice)
@@ -121,10 +129,14 @@ contract L1EscrowTest is Test {
     assertEq(proxyV2.getBeneficiary(), beneficiary);
   }
 
-  /// @notice Upgrade as non-owner; make sure it reverted
-  function testUpgradeAsNonOwner() public {
+  /// @notice Upgrade as non-admin; make sure it reverted
+  function testUpgradeAsNonAdmin() public {
     vm.startPrank(alice);
-    vm.expectRevert(bytes("Ownable: caller is not the owner"));
+    vm.expectRevert(
+      bytes(
+        "AccessControl: account 0xe05fcc23807536bee418f142d19fa0d21bb0cff7 is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+      )
+    );
     proxyV1.upgradeTo(address(v2));
   }
 
@@ -132,18 +144,30 @@ contract L1EscrowTest is Test {
   // == setProtocolDAI ========================================================
   // ==========================================================================
 
-  /// @notice Make sure owner can update the totalProtocolDAI
-  function testSetProtocolDAIAsOwner() public {
-    vm.startPrank(owner);
+  /// @notice Make sure Maker can update the totalProtocolDAI
+  function testSetProtocolDAIAsMaker() public {
+    vm.startPrank(maker);
     proxyV1.setProtocolDAI(1 ether);
     vm.stopPrank();
     assertEq(proxyV1.totalProtocolDAI(), 1 ether);
   }
 
-  /// @notice Make sure non-owner cannot update the totalProtocolDAI
-  function testSetProtocolDAIAsNonOwner() public {
+  /// @notice Make sure non-maker cannot update the totalProtocolDAI
+  function testSetProtocolDAIAsNonMaker() public {
     vm.startPrank(alice);
-    vm.expectRevert(bytes("Ownable: caller is not the owner"));
+    vm.expectRevert(
+      bytes(
+        "AccessControl: account 0xe05fcc23807536bee418f142d19fa0d21bb0cff7 is missing role 0x70d8f6b4dfca278d41482e0778a0bf123d87b86b23b71cc0ef42c2f082e8053a"
+      )
+    );
+    proxyV1.setProtocolDAI(1 ether);
+
+    vm.startPrank(admin);
+    vm.expectRevert(
+      bytes(
+        "AccessControl: account 0xba0af250cc5ffecaca8ff49310d5b9478a6f758e is missing role 0x70d8f6b4dfca278d41482e0778a0bf123d87b86b23b71cc0ef42c2f082e8053a"
+      )
+    );
     proxyV1.setProtocolDAI(1 ether);
   }
 
@@ -169,7 +193,7 @@ contract L1EscrowTest is Test {
     uint256 sDAIBalance = ISavingsDAI(sdai).previewDeposit(bridgeAmount);
 
     vm.startPrank(alice);
-    vm.store(dai, keccak256(abi.encode(alice, 2)), bytes32(bridgeAmount));
+    deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(mockedProxyV1), bridgeAmount);
     mockedProxyV1.bridge(bridgeAmount, false);
     vm.stopPrank();
@@ -193,7 +217,7 @@ contract L1EscrowTest is Test {
     uint256 sDAIBalance = ISavingsDAI(sdai).previewDeposit(bridgeAmount);
 
     vm.startPrank(alice);
-    vm.store(dai, keccak256(abi.encode(alice, 2)), bytes32(bridgeAmount));
+    deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
     proxyV1.bridge(bridgeAmount, false);
     vm.stopPrank();
@@ -214,7 +238,7 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     uint256 bridgeAmount = 1_000_000_000 ether;
     uint256 prevRate = ISavingsDAI(sdai).previewDeposit(1 ether);
-    vm.store(dai, keccak256(abi.encode(alice, 2)), bytes32(bridgeAmount));
+    deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
     proxyV1.bridge(bridgeAmount, false);
     vm.stopPrank();
@@ -251,14 +275,14 @@ contract L1EscrowTest is Test {
     uint256 bridgeAmount = 5 ether;
 
     vm.startPrank(alice);
-    vm.store(dai, keccak256(abi.encode(alice, 2)), bytes32(bridgeAmount));
+    deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
     proxyV1.bridge(bridgeAmount, false);
     vm.stopPrank();
 
     // It should withdraw DAI from sDAI
     uint256 sDaiBalancePrev = IERC20(sdai).balanceOf(address(proxyV1));
-    vm.startPrank(owner);
+    vm.startPrank(maker);
     proxyV1.setProtocolDAI(3 ether);
     vm.stopPrank();
     proxyV1.rebalance();
@@ -268,7 +292,7 @@ contract L1EscrowTest is Test {
 
     // It should deposit DAI to sDAI
     sDaiBalancePrev = IERC20(sdai).balanceOf(address(proxyV1));
-    vm.startPrank(owner);
+    vm.startPrank(maker);
     proxyV1.setProtocolDAI(1 ether);
     vm.stopPrank();
     proxyV1.rebalance();
@@ -281,25 +305,29 @@ contract L1EscrowTest is Test {
   // == setBeneficiary ========================================================
   // ==========================================================================
 
-  /// @notice Make sure owner can update the beneficiary
-  function testSetBeneficiaryAsOwner() public {
-    vm.startPrank(owner);
+  /// @notice Make sure admin can update the beneficiary
+  function testSetBeneficiaryAsAdmin() public {
+    vm.startPrank(admin);
     proxyV1.setBeneficiary(bob);
     vm.stopPrank();
     assertEq(proxyV1.beneficiary(), bob);
   }
 
-  /// @notice Make sure non-owner cannot update the beneficiary
-  function testSetBeneficiaryAsNonOwner() public {
+  /// @notice Make sure non-admin cannot update the beneficiary
+  function testSetBeneficiaryAsNonAdmin() public {
     vm.startPrank(alice);
-    vm.expectRevert(bytes("Ownable: caller is not the owner"));
+    vm.expectRevert(
+      bytes(
+        "AccessControl: account 0xe05fcc23807536bee418f142d19fa0d21bb0cff7 is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+      )
+    );
     proxyV1.setBeneficiary(bob);
     vm.stopPrank();
   }
 
   /// @notice Make sure revert if beneficiary is invalid
   function testSetBeneficiaryToInvalidAddress() public {
-    vm.startPrank(owner);
+    vm.startPrank(admin);
     address prevBeneficiary = proxyV1.beneficiary();
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -325,7 +353,7 @@ contract L1EscrowTest is Test {
     vm.assume(bridgeAmount < 1_000_000_000 ether);
 
     vm.startPrank(alice);
-    vm.store(dai, keccak256(abi.encode(alice, 2)), bytes32(bridgeAmount));
+    deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
     proxyV1.bridge(bridgeAmount, false);
     vm.stopPrank();
@@ -366,7 +394,7 @@ contract L1EscrowTest is Test {
     vm.assume(bridgeAmount < 1_000_000_000 ether);
 
     vm.startPrank(alice);
-    vm.store(dai, keccak256(abi.encode(alice, 2)), bytes32(bridgeAmount));
+    deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
     proxyV1.bridge(bridgeAmount, false);
     vm.stopPrank();

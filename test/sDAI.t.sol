@@ -15,8 +15,15 @@ import {ISavingsDAI} from "src/ISavingsDAI.sol";
 contract sDAITest is Test {
   using SafeERC20 for IERC20;
 
+  string ETH_RPC_URL = vm.envString("ETH_RPC_URL");
+
   address dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
   ISavingsDAI sdai = ISavingsDAI(0x83F20F44975D03b1b09e64809B757c47f942BEeA);
+
+  function setUp() public {
+    uint256 mainnetFork = vm.createFork(ETH_RPC_URL);
+    vm.selectFork(mainnetFork);
+  }
 
   function testRoundingIssue() public {
     vm.roll(17_693_387); // pin block
