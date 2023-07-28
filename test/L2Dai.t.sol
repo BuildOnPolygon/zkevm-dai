@@ -42,9 +42,11 @@ contract L2DaiV2Mock is L2Dai {
  * @notice Unit tests for L2Dai
  */
 contract L2DaiTest is Test {
-  address owner = address(0xB453D);
-  address alice = address(0xA11CE);
-  address bob = address(0xB0B);
+  string ZKEVM_RPC_URL = vm.envString("ZKEVM_RPC_URL");
+
+  address owner = vm.addr(0xB453D);
+  address alice = vm.addr(0xA11CE);
+  address bob = vm.addr(0xB0B);
 
   address bridgeAddress = address(0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe);
   address destAddress = address(4);
@@ -59,6 +61,9 @@ contract L2DaiTest is Test {
   BridgeMock bridge;
 
   function setUp() public {
+    uint256 zkEvmFork = vm.createFork(ZKEVM_RPC_URL);
+    vm.selectFork(zkEvmFork);
+
     v1 = new L2Dai();
     bytes memory v1Data = abi.encodeWithSelector(
       L2Dai.initialize.selector, owner, bridgeAddress, destAddress, destId

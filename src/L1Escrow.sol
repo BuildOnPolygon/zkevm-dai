@@ -3,7 +3,8 @@ pragma solidity 0.8.17;
 
 import {Initializable} from "upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {OwnableUpgradeable} from "upgradeable/access/OwnableUpgradeable.sol";
+import {AccessControlUpgradeable} from
+  "upgradeable/access/AccessControlUpgradeable.sol";
 import {IERC20} from "oz/token/ERC20/IERC20.sol";
 import {SafeERC20} from "oz/token/ERC20/utils/SafeERC20.sol";
 
@@ -15,8 +16,12 @@ import {IBridge} from "./IBridge.sol";
  * @author sepyke.eth
  * @notice Main smart contract to bridge DAI from Ethereum to Polygon zkEVM
  */
-contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
   using SafeERC20 for IERC20;
+
+  /// @notice Role identifiers
+  bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+  bytes32 public constant MAKER_ROLE = keccak256("MAKER_ROLE");
 
   /// @notice DAI contract
   IERC20 public dai;
@@ -71,7 +76,8 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
   /**
    * @notice L1Escrow initializer
-   * @param _ownerAddress The owner address
+   * @param _adminAddress The admin address
+   * @param _makerAddress The MakerDAO address
    * @param _daiAddress The DAI address
    * @param _sdaiAddress The sDAI address
    * @param _bridgeAddress The Polygon zkEVM bridge address
@@ -81,7 +87,8 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
    * @param _beneficiary The address to which yield from DSR should be sent
    */
   function initialize(
-    address _ownerAddress,
+    address _adminAddress,
+    address _makerAddress,
     address _daiAddress,
     address _sdaiAddress,
     address _bridgeAddress,
@@ -90,9 +97,12 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     uint256 _totalProtocolDAI,
     address _beneficiary
   ) public initializer {
-    __Ownable_init();
+    __AccessControl_init();
     __UUPSUpgradeable_init();
-    transferOwnership(_ownerAddress);
+
+    _grantRole(ADMIN_ROLE, _adminAddress);
+    _grantRole(MAKER_ROLE, _makerAddress);
+
     dai = IERC20(_daiAddress);
     sdai = ISavingsDAI(_sdaiAddress);
     zkEvmBridge = IBridge(_bridgeAddress);
@@ -106,13 +116,13 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
    * @dev The L1Escrow can only be upgraded by the owner
    * @param v new L1Escrow version
    */
-  function _authorizeUpgrade(address v) internal override onlyOwner {}
+  function _authorizeUpgrade(address v) internal override onlyRole(ADMIN_ROLE) {}
 
   /**
    * @notice Set a new target amount of DAI locked in this smart contract
    * @param amount A new target amount
    */
-  function setProtocolDAI(uint256 amount) public virtual onlyOwner {
+  function setProtocolDAI(uint256 amount) public virtual onlyRole(MAKER_ROLE) {
     totalProtocolDAI = amount;
     emit TotalProtocolDAIUpdated(amount);
   }
@@ -202,7 +212,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
    * @notice Set new beneficiary address
    * @param b new beneficiary address
    */
-  function setBeneficiary(address b) public virtual onlyOwner {
+  function setBeneficiary(address b) public virtual onlyRole(ADMIN_ROLE) {
     if (b == beneficiary || b == address(0)) {
       revert BeneficiaryInvalid(b);
     }
