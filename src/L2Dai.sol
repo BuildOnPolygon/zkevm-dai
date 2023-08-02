@@ -72,18 +72,20 @@ contract L2Dai is
 
   /**
    * @notice Bridge DAI from Polygon zkEVM to Ethereum mainnet
+   * @param recipient The recipient of the bridged token
    * @param amount DAI amount
    * @param forceUpdateGlobalExitRoot Indicates if the global exit root is
    *        updated or not
    */
-  function bridge(uint256 amount, bool forceUpdateGlobalExitRoot)
-    public
-    virtual
-  {
+  function bridgeToken(
+    address recipient,
+    uint256 amount,
+    bool forceUpdateGlobalExitRoot
+  ) public virtual {
     if (amount < 1 ether) revert BridgeAmountInvalid();
 
     _burn(msg.sender, amount);
-    bytes memory messageData = abi.encode(msg.sender, amount);
+    bytes memory messageData = abi.encode(recipient, amount);
     zkEvmBridge.bridgeMessage(
       destId, destAddress, forceUpdateGlobalExitRoot, messageData
     );

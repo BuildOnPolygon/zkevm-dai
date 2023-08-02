@@ -129,14 +129,16 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
 
   /**
    * @notice Bridge DAI from Ethereum mainnet to Polygon zkEVM
+   * @param recipient The recipient of the bridged token
    * @param amount DAI amount
    * @param forceUpdateGlobalExitRoot Indicates if the global exit root is
    *        updated or not
    */
-  function bridge(uint256 amount, bool forceUpdateGlobalExitRoot)
-    external
-    virtual
-  {
+  function bridgeToken(
+    address recipient,
+    uint256 amount,
+    bool forceUpdateGlobalExitRoot
+  ) external virtual {
     // Set minimum amount of bridged DAI to cover rounding issue
     // e.g. if you deposit 1 wei to sDAI, you will get 0 shares
     if (amount < 1 ether) revert BridgeAmountInvalid();
@@ -152,7 +154,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
     try sdai.deposit(amount, address(this)) returns (uint256) {} catch {}
     dai.safeApprove(address(sdai), 0);
 
-    bytes memory messageData = abi.encode(msg.sender, amount);
+    bytes memory messageData = abi.encode(recipient, amount);
     zkEvmBridge.bridgeMessage(
       destId, destAddress, forceUpdateGlobalExitRoot, messageData
     );

@@ -117,7 +117,7 @@ contract L2DaiTest is Test {
   function testBridgeWithInvalidAmount() public {
     vm.startPrank(alice);
     vm.expectRevert(abi.encodeWithSelector(L2Dai.BridgeAmountInvalid.selector));
-    proxyV1.bridge(0, false);
+    proxyV1.bridgeToken(alice, 0, false);
   }
 
   /// @notice Make sure L2Dai submit correct message to the bridge
@@ -132,7 +132,7 @@ contract L2DaiTest is Test {
     vm.stopPrank();
 
     vm.startPrank(alice);
-    mockedProxyV1.bridge(bridgeAmount, false);
+    mockedProxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     assertEq(mockedProxyV1.balanceOf(alice), 0);
@@ -157,7 +157,7 @@ contract L2DaiTest is Test {
     vm.stopPrank();
 
     vm.startPrank(alice);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     assertEq(proxyV1.balanceOf(alice), 0);
@@ -180,7 +180,7 @@ contract L2DaiTest is Test {
     vm.stopPrank();
 
     vm.startPrank(alice);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     address currentBridgeAddress = address(proxyV1.zkEvmBridge());
@@ -225,19 +225,19 @@ contract L2DaiTest is Test {
     vm.stopPrank();
 
     vm.startPrank(alice);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(bob, bridgeAmount, false);
     vm.stopPrank();
 
     address currentBridgeAddress = address(proxyV1.zkEvmBridge());
     address originAddress = proxyV1.destAddress();
     uint32 originNetwork = proxyV1.destId();
-    bytes memory messageData = abi.encode(alice, bridgeAmount);
+    bytes memory messageData = abi.encode(bob, bridgeAmount);
 
     vm.startPrank(currentBridgeAddress);
     proxyV1.onMessageReceived(originAddress, originNetwork, messageData);
     vm.stopPrank();
 
-    assertEq(proxyV1.balanceOf(alice), bridgeAmount);
+    assertEq(proxyV1.balanceOf(bob), bridgeAmount);
     assertEq(proxyV1.totalSupply(), bridgeAmount);
   }
 }

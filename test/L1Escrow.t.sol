@@ -182,7 +182,7 @@ contract L1EscrowTest is Test {
     vm.expectRevert(
       abi.encodeWithSelector(L1Escrow.BridgeAmountInvalid.selector)
     );
-    proxyV1.bridge(0, false);
+    proxyV1.bridgeToken(alice, 0, false);
   }
 
   /// @notice Make sure L1Escrow submit correct message to the bridge
@@ -195,7 +195,7 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(mockedProxyV1), bridgeAmount);
-    mockedProxyV1.bridge(bridgeAmount, false);
+    mockedProxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     assertEq(IERC20(dai).balanceOf(alice), 0);
@@ -219,7 +219,7 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     assertEq(proxyV1.totalBridgedDAI(), bridgeAmount);
@@ -240,7 +240,7 @@ contract L1EscrowTest is Test {
     uint256 prevRate = ISavingsDAI(sdai).previewDeposit(1 ether);
     deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     assertEq(proxyV1.totalBridgedDAI(), bridgeAmount);
@@ -277,7 +277,7 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     // It should withdraw DAI from sDAI
@@ -355,7 +355,7 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(alice, bridgeAmount, false);
     vm.stopPrank();
 
     address currentBridgeAddress = address(proxyV1.zkEvmBridge());
@@ -396,19 +396,19 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     deal(dai, alice, bridgeAmount);
     IERC20(dai).safeApprove(address(proxyV1), bridgeAmount);
-    proxyV1.bridge(bridgeAmount, false);
+    proxyV1.bridgeToken(bob, bridgeAmount, false);
     vm.stopPrank();
 
     address currentBridgeAddress = address(proxyV1.zkEvmBridge());
     address originAddress = proxyV1.destAddress();
     uint32 originNetwork = proxyV1.destId();
-    bytes memory messageData = abi.encode(alice, bridgeAmount);
+    bytes memory messageData = abi.encode(bob, bridgeAmount);
 
     vm.startPrank(currentBridgeAddress);
     proxyV1.onMessageReceived(originAddress, originNetwork, messageData);
     vm.stopPrank();
 
-    assertEq(IERC20(dai).balanceOf(alice), bridgeAmount);
+    assertEq(IERC20(dai).balanceOf(bob), bridgeAmount);
     assertEq(proxyV1.totalBridgedDAI(), 0);
   }
 }
