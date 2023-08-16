@@ -17,7 +17,12 @@ import {UUPSProxy} from "./UUPSProxy.sol";
  */
 contract L1EscrowV2Mock is L1Escrow {
   /// @dev Update setBeneficiary logic for testing purpose
-  function setBeneficiary(address b) public view override onlyRole(ADMIN_ROLE) {
+  function setBeneficiary(address b)
+    public
+    view
+    override
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
     revert BeneficiaryInvalid(b);
   }
 
@@ -134,7 +139,7 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     vm.expectRevert(
       bytes(
-        "AccessControl: account 0xe05fcc23807536bee418f142d19fa0d21bb0cff7 is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+        "AccessControl: account 0xe05fcc23807536bee418f142d19fa0d21bb0cff7 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
       )
     );
     proxyV1.upgradeTo(address(v2));
@@ -318,7 +323,7 @@ contract L1EscrowTest is Test {
     vm.startPrank(alice);
     vm.expectRevert(
       bytes(
-        "AccessControl: account 0xe05fcc23807536bee418f142d19fa0d21bb0cff7 is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+        "AccessControl: account 0xe05fcc23807536bee418f142d19fa0d21bb0cff7 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
       )
     );
     proxyV1.setBeneficiary(bob);

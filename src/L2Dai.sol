@@ -3,7 +3,8 @@ pragma solidity 0.8.17;
 
 import {Initializable} from "upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {OwnableUpgradeable} from "upgradeable/access/OwnableUpgradeable.sol";
+import {Ownable2StepUpgradeable} from
+  "upgradeable/access/Ownable2StepUpgradeable.sol";
 import {ERC20Upgradeable} from "upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 import {ISavingsDAI} from "./ISavingsDAI.sol";
@@ -17,7 +18,7 @@ import {IBridge} from "./IBridge.sol";
 contract L2Dai is
   Initializable,
   UUPSUpgradeable,
-  OwnableUpgradeable,
+  Ownable2StepUpgradeable,
   ERC20Upgradeable
 {
   /// @notice The Polygon zkEVM bridge contract
@@ -41,6 +42,14 @@ contract L2Dai is
   /// @notice This error is raised if bridged amount is invalid
   error BridgeAmountInvalid();
 
+  /// @notice This error is raised if ownership is renounced
+  error RenounceInvalid();
+
+  /// @notice Disable initializer on deploy
+  constructor() {
+    _disableInitializers();
+  }
+
   /**
    * @notice L2Dai initializer
    * @dev This initializer should be called via UUPSProxy constructor
@@ -55,10 +64,11 @@ contract L2Dai is
     address _destAddress,
     uint32 _destId
   ) public initializer {
-    __Ownable_init();
+    __Ownable2Step_init();
     __UUPSUpgradeable_init();
     __ERC20_init("Dai Stablecoin", "DAI");
-    transferOwnership(_ownerAddress);
+
+    _transferOwnership(_ownerAddress);
     zkEvmBridge = IBridge(_bridgeAddress);
     destAddress = _destAddress;
     destId = _destId;
@@ -69,6 +79,14 @@ contract L2Dai is
    * @param v new L2Dai version
    */
   function _authorizeUpgrade(address v) internal override onlyOwner {}
+
+  /**
+   * @dev Owner cannot renounce the contract coz it's required in order to
+   * upgrade the contract
+   */
+  function renounceOwnership() public virtual override onlyOwner {
+    revert RenounceInvalid();
+  }
 
   /**
    * @notice Bridge DAI from Polygon zkEVM to Ethereum mainnet

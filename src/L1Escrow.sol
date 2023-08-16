@@ -3,8 +3,8 @@ pragma solidity 0.8.17;
 
 import {Initializable} from "upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {AccessControlUpgradeable} from
-  "upgradeable/access/AccessControlUpgradeable.sol";
+import {AccessControlDefaultAdminRulesUpgradeable} from
+  "upgradeable/access/AccessControlDefaultAdminRulesUpgradeable.sol";
 import {IERC20} from "oz/token/ERC20/IERC20.sol";
 import {SafeERC20} from "oz/token/ERC20/utils/SafeERC20.sol";
 
@@ -16,11 +16,14 @@ import {IBridge} from "./IBridge.sol";
  * @author sepyke.eth
  * @notice Main smart contract to bridge DAI from Ethereum to Polygon zkEVM
  */
-contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
+contract L1Escrow is
+  Initializable,
+  UUPSUpgradeable,
+  AccessControlDefaultAdminRulesUpgradeable
+{
   using SafeERC20 for IERC20;
 
   /// @notice Role identifiers
-  bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
   bytes32 public constant MAKER_ROLE = keccak256("MAKER_ROLE");
 
   /// @notice DAI contract
@@ -74,6 +77,11 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
   /// @notice This error is raised if bridged amount is invalid
   error BridgeAmountInvalid();
 
+  /// @notice Disable initializer on deploy
+  constructor() {
+    _disableInitializers();
+  }
+
   /**
    * @notice L1Escrow initializer
    * @param _adminAddress The admin address
@@ -97,10 +105,9 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
     uint256 _totalProtocolDAI,
     address _beneficiary
   ) public initializer {
-    __AccessControl_init();
+    __AccessControlDefaultAdminRules_init(3 days, _adminAddress);
     __UUPSUpgradeable_init();
 
-    _grantRole(ADMIN_ROLE, _adminAddress);
     _grantRole(MAKER_ROLE, _makerAddress);
 
     dai = IERC20(_daiAddress);
@@ -114,9 +121,13 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
 
   /**
    * @dev The L1Escrow can only be upgraded by the owner
-   * @param v new L1Escrow version
+   * @param v new L1Escrow implementation
    */
-  function _authorizeUpgrade(address v) internal override onlyRole(ADMIN_ROLE) {}
+  function _authorizeUpgrade(address v)
+    internal
+    override
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {}
 
   /**
    * @notice Set a new target amount of DAI locked in this smart contract
@@ -151,8 +162,10 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
     // sdai.deposit may reverted and it is possible that total amount of
     // locked DAI in this smart contract is greater than the totalProtocolDAI
     dai.safeApprove(address(sdai), amount);
-    try sdai.deposit(amount, address(this)) returns (uint256) {} catch {}
-    dai.safeApprove(address(sdai), 0);
+    try sdai.deposit(amount, address(this)) returns (uint256) {}
+    catch {
+      dai.safeApprove(address(sdai), 0);
+    }
 
     bytes memory messageData = abi.encode(recipient, amount);
     zkEvmBridge.bridgeMessage(
@@ -178,7 +191,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
       }
       if (excess > 0.05 ether) {
         uint256 claimedYield = excess - 0.01 ether;
-        dai.transfer(beneficiary, claimedYield);
+        dai.safeTransfer(beneficiary, claimedYield);
         emit YieldClaimed(beneficiary, claimedYield);
       }
     }
@@ -196,7 +209,6 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
         uint256 depositAmount = targetDepositAmount - 0.01 ether;
         dai.safeApprove(address(sdai), depositAmount);
         sdai.deposit(depositAmount, address(this));
-        dai.safeApprove(address(sdai), 0);
         emit AssetRebalanced();
       }
     } else {
@@ -214,7 +226,11 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
    * @notice Set new beneficiary address
    * @param b new beneficiary address
    */
-  function setBeneficiary(address b) public virtual onlyRole(ADMIN_ROLE) {
+  function setBeneficiary(address b)
+    public
+    virtual
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
     if (b == beneficiary || b == address(0)) {
       revert BeneficiaryInvalid(b);
     }
@@ -245,7 +261,7 @@ contract L1Escrow is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
     uint256 savingsBalance = sdai.previewRedeem(sdaiBalance);
     if (amount > savingsBalance) {
       sdai.withdraw(savingsBalance, recipient, address(this));
-      dai.transfer(recipient, amount - savingsBalance);
+      dai.safeTransfer(recipient, amount - savingsBalance);
     } else {
       sdai.withdraw(amount, recipient, address(this));
     }
