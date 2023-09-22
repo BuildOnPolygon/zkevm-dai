@@ -1,21 +1,6 @@
-## Polygon zkEVM DAI
-
-Native & capital efficient DAI on
-[Polygon zkEVM](https://polygon.technology/polygon-zkevm) powered by
-[Spark protocol](https://www.sparkprotocol.io/).
+## Polygon zkEVM DAI Bridge
 
 ### Introduction
-
-Polygon zkEVM provides secure bridge for developers to move assets across chains
-(L1 <-> zkEVM). Developer can send cross-chain message from L1 to zkEVM or zkEVM
-to L1 using the bridge.
-
-Spark Protocol is a MakerDAO powered lending market. User can borrow DAI using
-various collateral and deposit DAI to DAI Saving Rates via sDAI to earn interest.
-
-In order to build native and capital efficient DAI on Polygon zkEVM, we will
-utilize Spark protocol `sDAI` for escrowed token. This will utilize locked
-liquidity, hence the capital efficiency.
 
 Native DAI implementation is consist of two smart contracts:
 
@@ -56,7 +41,7 @@ Create `.env` with the following contents:
 
 ```
 ETH_RPC_URL=""
-ETH_RPC_URL="https://zkevm-rpc.com"
+ZKEVM_RPC_URL="https://zkevm-rpc.com"
 ETHERSCAN_API_KEY=""
 ```
 
@@ -87,20 +72,14 @@ forge script ...
 
 ## Contract addresses
 
-| Smart contract       | Network       | Address                                                                                                                                |
-| -------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| DAI                  | Goerli        | [0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844](https://goerli.etherscan.io/token/0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844)             |
-|                      | Mainnet       | [0x6B175474E89094C44Da98b954EedeAC495271d0F](https://etherscan.io/address/0x6B175474E89094C44Da98b954EedeAC495271d0F)                  |
-| sDAI                 | Goerli        | [0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C](https://goerli.etherscan.io/token/0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C)             |
-|                      | Mainnet       | [0x83f20f44975d03b1b09e64809b757c47f942beea](https://etherscan.io/token/0x83f20f44975d03b1b09e64809b757c47f942beea#code)               |
-| Polygon ZkEVM Bridge | Goerli        | [0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7](https://goerli.etherscan.io/address/0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7)           |
-|                      | Mainnet       | [0x2a3dd3eb832af982ec71669e178424b10dca2ede](https://etherscan.io/address/0x2a3dd3eb832af982ec71669e178424b10dca2ede)                  |
-|                      | zkEVM Testnet | [0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7](https://testnet-zkevm.polygonscan.com/address/0xf6beeebb578e214ca9e23b0e9683454ff88ed2a7) |
-|                      | zkEVM Mainnet | [0x2a3dd3eb832af982ec71669e178424b10dca2ede](https://zkevm.polygonscan.com/address/0x2a3dd3eb832af982ec71669e178424b10dca2ede)         |
-| L1Escrow             | Goerli        | _To be deployed_                                                                                                                       |
-|                      | Mainnet       | _To be deployed_                                                                                                                       |
-| L2Dai                | zkEVM Testnet | _To be deployed_                                                                                                                       |
-|                      | zkEVM Mainnet | _To be deployed_                                                                                                                       |
+| Smart contract       | Network       | Address                                                                                                                        |
+| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| DAI                  | Mainnet       | [0x6B175474E89094C44Da98b954EedeAC495271d0F](https://etherscan.io/address/0x6B175474E89094C44Da98b954EedeAC495271d0F)          |
+| sDAI                 | Mainnet       | [0x83f20f44975d03b1b09e64809b757c47f942beea](https://etherscan.io/token/0x83f20f44975d03b1b09e64809b757c47f942beea#code)       |
+| Polygon ZkEVM Bridge | Mainnet       | [0x2a3dd3eb832af982ec71669e178424b10dca2ede](https://etherscan.io/address/0x2a3dd3eb832af982ec71669e178424b10dca2ede)          |
+|                      | zkEVM Mainnet | [0x2a3dd3eb832af982ec71669e178424b10dca2ede](https://zkevm.polygonscan.com/address/0x2a3dd3eb832af982ec71669e178424b10dca2ede) |
+| L1Escrow             | Mainnet       | [0x4a27ac91c5cd3768f140ecabde3fc2b2d92edb98](https://etherscan.io/address/0x4a27ac91c5cd3768f140ecabde3fc2b2d92edb98)          |
+| L2Dai                | zkEVM Mainnet | [0x744c5860ba161b5316f7e80d9ec415e2727e5bd5](https://zkevm.polygonscan.com/address/0x744c5860ba161b5316f7e80d9ec415e2727e5bd5) |
 
 ## Known Issues
 
