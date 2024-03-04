@@ -8,6 +8,7 @@ remappings = [
   "oz/=lib/openzeppelin-contracts/contracts/",
   "upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
 ]
+evm_version = "shanghai"
 
 [fmt]
 line_length = 79
