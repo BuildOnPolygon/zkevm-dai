@@ -11,7 +11,7 @@ remappings = [
 evm_version = "shanghai"
 
 [fmt]
-line_length = 79
+line_length = 120
 tab_width = 2
 number_underscore = "thousands"
 wrap_comments = true
