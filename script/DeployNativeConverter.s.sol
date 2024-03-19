@@ -9,7 +9,16 @@ import {ICREATE3Factory} from "./ICREATE3Factory.sol";
 
 import {L2DaiV2} from "src/L2DaiV2.sol";
 
-// forge script script/DeployNativeConverter.s.sol:DeployNativeConverter --rpc-url ... -vvvvv --verify --broadcast
+/*
+forge script script/DeployNativeConverter.s.sol:DeployNativeConverter \
+  --rpc-url https://zkevm-rpc.com/ \
+  --chain-id 1101 \
+  --verify \
+  --verifier etherscan \
+  --etherscan-api-key ... \
+  -vvvvv \
+  --broadcast
+*/
 contract DeployNativeConverter is Script {
   address internal constant _ADMIN = 0x2be7b3e7b9BFfbB38B85f563f88A34d84Dc99c9f;
   address internal constant _PAUSER = 0x2be7b3e7b9BFfbB38B85f563f88A34d84Dc99c9f;
