@@ -83,14 +83,15 @@ forge script ...
 
 ## Testnet Contract addresses
 
-| Smart contract       | Network       | Address                                                                                                                        |
-| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| DAI                  | Goerli       | [0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844](https://goerli.etherscan.io/address/0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844)          |
-| sDAI                 | Goerli       | [0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C](https://goerli.etherscan.io/address/0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C)       |
-| Polygon ZkEVM Bridge | Goerli       | [0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7](https://goerli.etherscan.io/address/0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7)          |
-|                      | zkEVM Testnet | [0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7](https://testnet-zkevm.polygonscan.com/address/0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7) |
-| L1Escrow             | Goerli       | [0x2929b2635E51f2dA1373A76F166A237322694fA6](https://goerli.etherscan.io/address/0x2929b2635E51f2dA1373A76F166A237322694fA6)          |
+| Smart contract       | Network       | Address                                                                                                                                     |
+| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| DAI                  | Goerli        | [0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844](https://goerli.etherscan.io/address/0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844)                |
+| sDAI                 | Goerli        | [0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C](https://goerli.etherscan.io/address/0xD8134205b0328F5676aaeFb3B2a0DC15f4029d8C)                |
+| Polygon ZkEVM Bridge | Goerli        | [0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7](https://goerli.etherscan.io/address/0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7)                |
+|                      | zkEVM Testnet | [0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7](https://testnet-zkevm.polygonscan.com/address/0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7)      |
+| L1Escrow             | Goerli        | [0x2929b2635E51f2dA1373A76F166A237322694fA6](https://goerli.etherscan.io/address/0x2929b2635E51f2dA1373A76F166A237322694fA6)                |
 | L2Dai                | zkEVM Testnet | [0x755CB8A808c99706afAA34547204f17cD33C6316](https://testnet-zkevm.polygonscan.com/address/0x755CB8A808c99706afAA34547204f17cD33C6316#code) |
+
 ## Known Issues
 
 ### Rounding Issue
